@@ -22,7 +22,7 @@ def create_device():
 def apply_defocus_on_slm():
     
     '''
-    This function disply a defocus (Z4) of amplitude 500nm rms on a circular mask
+    This function display a defocus (Z4) of amplitude 500nm rms on a circular mask
     of center (517,875) pixel and radius 571pixel, in the frame of the SLM
     '''
     # building circular mask
