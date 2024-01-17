@@ -4,6 +4,9 @@ from slm_4lgs_prototype.camera_controller import FliSdk
 #TODO: check units in exposure time
 #TODO: erase exit() use riseError
 #TODO: implement acquisition functions
+#TODO: add start and stop only for get image
+# and verify all parameters can be changed
+# if it works change set func
 #TODO: add documentation to functions
 #TODO: implement test unit?
 
@@ -84,6 +87,7 @@ class CBlueOneCamera():
         
     def _updateSDK(self):
         ok = FliSdk.Update()
+        #FliSdk.Start()
         if not ok:
             raise FliError("Error while updating SDK.")
             
@@ -106,8 +110,10 @@ class CBlueOneCamera():
             raise FliError("Error: Camera is not CBLUE. CblueSfnc functions not available.")
             
     def set_fps(self, fps):
+        FliSdk.Stop()
         self._status = FliSdk.CblueSfnc_setAcquisitionFrameRate(fps)
-    
+        FliSdk.Start()
+         
     def get_fps(self):
         self._status, fps = FliSdk.CblueSfnc_getAcquisitionFrameRate()
         return fps
@@ -121,8 +127,10 @@ class CBlueOneCamera():
         return fps_min
     
     def set_exposure_time(self, texp_in_ms):
+        FliSdk.Stop()
         texp_in_us = texp_in_ms * 1000
         self._status = FliSdk.CblueSfnc_setExposureTime(texp_in_us)
+        FliSdk.Start()
     
     def get_exposure_time(self):
         self._status, texp_in_us = FliSdk.CblueSfnc_getExposureTime()
@@ -144,7 +152,9 @@ class CBlueOneCamera():
         return gain_in_dB
     
     def set_gain(self, gain_in_dB):
+        FliSdk.Stop()
         self._status = FliSdk.CblueSfnc_setGain(gain_in_dB)
+        FliSdk.Start()
         
     def get_max_gain(self):
         self._status, max_gain_in_dB = FliSdk.CblueSfnc_getGainMax()
@@ -166,9 +176,11 @@ class CBlueOneCamera():
         self._status = FliSdk.Cblue1_setConversionEfficiency(eff)
         
     def get_raw_image(self):
+        #FliSdk.Start()
         raw_image= FliSdk.GetRawImageAsNumpyArray(-1)
         #raw_image[0] -> numpy array uint 16
         #raw_image[1], raw_image[2] -> image frame shape
+        #FliSdk.Stop()
         return raw_image[0]
     
     def get_frame_shape(self):
@@ -180,13 +192,13 @@ class CBlueOneCamera():
         FliSdk.Stop()
         FliSdk.Exit()
     
-    def get_device_stastus(self):
+    def show_device_status(self):
         self._status, message = FliSdk.Cblue1_getDeviceStatus()
         val = FliSdk.IsStarted()
         print("Device Status:\t" + message)
-        print("Grabber Started:\t"+ val)
+        print("Grabber Started:\t"+ str(val))
     
-    def get_device_info(self):
+    def show_device_info(self):
         self._status, model_name = FliSdk.CblueSfnc_getDeviceModelName()
         self._status, version_name = FliSdk.CblueSfnc_getDeviceVersion()
         self._status, serial_number = FliSdk.CblueSfnc_getDeviceSerialNumber()
