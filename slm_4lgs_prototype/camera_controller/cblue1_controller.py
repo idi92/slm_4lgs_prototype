@@ -11,7 +11,7 @@ from slm_4lgs_prototype.camera_controller import FliSdk
 #TODO: implement test unit?
 
 class FliError(Exception):
-    """Exception raised for FirstLightImager SDK error.
+    """Exception raised for FirstLightImaging SDK error.
     
     ...
     
@@ -171,9 +171,11 @@ class CBlueOneCamera():
         return eff
     
     def set_convertion_efficiency(self, eff = 1):
+        FliSdk.Stop()
         #eff = 0 -> low
         #eff = 1 -> high
         self._status = FliSdk.Cblue1_setConversionEfficiency(eff)
+        FliSdk.Start()
         
     def get_raw_image(self):
         #FliSdk.Start()
@@ -183,25 +185,45 @@ class CBlueOneCamera():
         #FliSdk.Stop()
         return raw_image[0]
     
+    def get_cube_of_raw_images(self, Nframes):
+        cube = []
+        for idx in range(Nframes):
+            cube.append(self.get_raw_image())
+        return np.array(cube)
+    
     def get_frame_shape(self):
         self._status, height = FliSdk.CblueSfnc_getHeightMax()
         self._status, width = FliSdk.CblueSfnc_getWidthMax()
         return height, width
+    
+    def get_pixel_pitch(self):
+        self._status, pitch_y_in_um = FliSdk.CblueSfnc_getSensorPixelHeight()
+        self._status, pitch_x_in_um = FliSdk.CblueSfnc_getSensorPixelWidth()
+        if pitch_y_in_um == pitch_x_in_um :
+            pixel_pitch = pitch_x_in_um
+        else:
+            pixel_pitch = (pitch_y_in_um, pitch_x_in_um)
+            
+        return pixel_pitch
     
     def close_camera(self):
         FliSdk.Stop()
         FliSdk.Exit()
     
     def show_device_status(self):
-        self._status, message = FliSdk.Cblue1_getDeviceStatus()
+        self._status, message1 = FliSdk.Cblue1_getDeviceStatus()
+        self._status, message2 = FliSdk.Cblue1_getDeviceStatusDetailed()
         val = FliSdk.IsStarted()
-        print("Device Status:\t" + message)
+        print("Device Status:\t" + message1 + ',\t' + message2)
         print("Grabber Started:\t"+ str(val))
     
     def show_device_info(self):
+        self._status, vendor_name = FliSdk.CblueSfnc_getDeviceVendorName()
+        self._status, device_name = FliSdk.CblueSfnc_getDeviceManufacturerInfo()
         self._status, model_name = FliSdk.CblueSfnc_getDeviceModelName()
         self._status, version_name = FliSdk.CblueSfnc_getDeviceVersion()
         self._status, serial_number = FliSdk.CblueSfnc_getDeviceSerialNumber()
+        print(vendor_name + ":\t" + device_name)
         print("Device Model Name:\t" + model_name)
         print("Device Version Name:\t" + version_name)
         print("Device Serial Number:\t" + serial_number)
