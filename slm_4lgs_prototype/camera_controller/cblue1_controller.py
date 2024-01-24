@@ -7,6 +7,7 @@ from slm_4lgs_prototype.camera_controller import FliSdk
 #TODO: add start and stop only for get image
 # and verify all parameters can be changed
 # if it works change set func
+#TODO: add control on range of aviliable values on set cmdsf
 #TODO: add documentation to functions
 #TODO: implement test unit?
 
