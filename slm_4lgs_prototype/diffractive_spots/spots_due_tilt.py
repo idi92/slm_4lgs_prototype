@@ -1,14 +1,7 @@
 import numpy as np 
-#import matplotlib.pyplot as plt
 from PIL import Image
 from time import sleep
 from astropy.io import fits
-
-
-
-#im = Image.open(self._wfc_filename)
-#wfc = np.array(im, dtype=np.uint8)
-#☺wfc = np.reshape(wfc, (self.getNumberOfActuators(),))
 
 
 class SpotPositionMeasurer():
@@ -20,8 +13,8 @@ class SpotPositionMeasurer():
         self._Ntilt = len(lamda_vector)
         self._Nact = slm.get_number_of_actuators()
         self._wl = wl
-        
         self._ptv_vector = lamda_vector
+        
         self._load_bmp_tilt()
     
     def _load_bmp_tilt(self):
@@ -108,3 +101,31 @@ class SpotPositionMeasurer():
         gain = header['G_DB']
         wl = header['WL_M']
         return cube_images, ptv_vector, texp, gain, Nframes, wl
+    
+class SpotPositionAnalyser():
+    
+    FDIR = "D:\\06 SLM\\diffractive_spots_res\\"
+    
+    def __init__(self, file_name):
+        self._cube_images,  self._lambda_vector,\
+         self._texp, self._gain,\
+          self._Nframes,self._wl = SpotPositionMeasurer.load_measures(self.FDIR + file_name)
+        
+    def get_cube_images(self):
+        return self._cube_images
+    
+    def get_ptv_vector(self):
+        return self._lambda_vector
+    
+    def get_exposure_time(self):
+        return self._texp
+    
+    def get_gain(self):
+        return self._gain
+        
+        
+        
+        
+        
+        
+        

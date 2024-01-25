@@ -67,6 +67,8 @@ class CBlueOneCamera():
         self._check_if_is_cblue()
         self._status = None
         FliSdk.Start()
+        self._update_parameters_limits()
+        
     
     def _detect_and_set_camera(self, camera_name):
         #need to detect grabbers first otherwise camera cannot
@@ -109,11 +111,26 @@ class CBlueOneCamera():
         
         if not check1:
             raise FliError("Error: Camera is not CBLUE. CblueSfnc functions not available.")
+        
+    def _update_parameters_limits(self):
+        
+        self._fpsMax = self.get_max_fps()
+        self._fpsMin = self.get_min_fps()
+        self._tMax = self.get_max_exposure_time()
+        self._tMin = self.get_min_exposure_time()
+        self._gainMax = self.get_max_gain()
+        self._gainMin = self.get_min_gain()
+        self._convEffStat = self.get_convertion_efficiency()
+        
             
     def set_fps(self, fps):
-        FliSdk.Stop()
-        self._status = FliSdk.CblueSfnc_setAcquisitionFrameRate(fps)
-        FliSdk.Start()
+        if self._fpsMin <= fps <= self._fpsMax :
+            FliSdk.Stop()
+            self._status = FliSdk.CblueSfnc_setAcquisitionFrameRate(fps)
+            self._update_parameters_limits()
+            FliSdk.Start()
+        else:
+            raise FliError("Error! Input fps value out of limits: Min fps = %g"%self._fpsMin +", Max fps = %g"%self._fpsMax)
          
     def get_fps(self):
         self._status, fps = FliSdk.CblueSfnc_getAcquisitionFrameRate()
@@ -128,10 +145,14 @@ class CBlueOneCamera():
         return fps_min
     
     def set_exposure_time(self, texp_in_ms):
-        FliSdk.Stop()
-        texp_in_us = texp_in_ms * 1000
-        self._status = FliSdk.CblueSfnc_setExposureTime(texp_in_us)
-        FliSdk.Start()
+        if self._tMin <= texp_in_ms <= self._tMax:
+            FliSdk.Stop()
+            texp_in_us = texp_in_ms * 1000
+            self._status = FliSdk.CblueSfnc_setExposureTime(texp_in_us)
+            self._update_parameters_limits()
+            FliSdk.Start()
+        else:
+            raise FliError("Error! Input exposure time out of limits: tMin = %g"%self._tMin +" ms, tMax = %g ms"%self._tMax)
     
     def get_exposure_time(self):
         self._status, texp_in_us = FliSdk.CblueSfnc_getExposureTime()
@@ -153,9 +174,12 @@ class CBlueOneCamera():
         return gain_in_dB
     
     def set_gain(self, gain_in_dB):
-        FliSdk.Stop()
-        self._status = FliSdk.CblueSfnc_setGain(gain_in_dB)
-        FliSdk.Start()
+        if self._gainMin <= gain_in_dB <= self._gainMax:
+            FliSdk.Stop()
+            self._status = FliSdk.CblueSfnc_setGain(gain_in_dB)
+            FliSdk.Start()
+        else:
+            raise FliError("Error! Input gain out of limits: Min = %g dB"%self._gainMin + " Max = %g dB"%self._gainMax)
         
     def get_max_gain(self):
         self._status, max_gain_in_dB = FliSdk.CblueSfnc_getGainMax()
@@ -172,11 +196,14 @@ class CBlueOneCamera():
         return eff
     
     def set_convertion_efficiency(self, eff = 1):
-        FliSdk.Stop()
-        #eff = 0 -> low
-        #eff = 1 -> high
-        self._status = FliSdk.Cblue1_setConversionEfficiency(eff)
-        FliSdk.Start()
+        if eff == 0 or eff == 1:
+            FliSdk.Stop()
+            #eff = 0 -> low
+            #eff = 1 -> high
+            self._status = FliSdk.Cblue1_setConversionEfficiency(eff)
+            FliSdk.Start()
+        else:
+            raise FliError("Error!Wrong Input: set 0 or 1 for Low or High Convertion Gain, rispectively.")
         
     def get_raw_image(self):
         #FliSdk.Start()

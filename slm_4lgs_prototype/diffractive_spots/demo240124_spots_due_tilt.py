@@ -17,11 +17,6 @@ def main(lambda_vector, texp, gain, Nframes, file_name):
     dark_fname = 'dark.fits'
     dark = 0
     
-    '''
-    texp = 0.3 #ms
-    gain = 1 #dB
-    Nframes = 10'''
-    
     spm.acquire_measures(texp, Nframes, gain, dark)
     fname_meas = "D:\\06 SLM\\diffractive_spots_res\\" + file_name
     spm.save_measures(fname_meas)
@@ -36,11 +31,10 @@ def main(lambda_vector, texp, gain, Nframes, file_name):
     
     
     
-def show_images():
+def show_images(file_name):
     import matplotlib.pyplot as plt
-    fname = "D:\\06 SLM\\diffractive_spots_res\\spm240124_test.fits"
     
-    cube_images, ptv_vector, texp, gain, Nframes, wl = SpotPositionMeasurer.load_measures(fname)
+    cube_images, ptv_vector, texp, gain, Nframes, wl = SpotPositionMeasurer.load_measures(file_name)
     
     Nima = cube_images.shape[0]
     
