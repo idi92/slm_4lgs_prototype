@@ -4,7 +4,7 @@ from slm_4lgs_prototype.diffractive_spots.spots_due_tilt import SpotPositionMeas
 from slm_4lgs_prototype.camera_controller.cblue1_controller import CBlueOneCamera
 
 
-def main(lambda_vector, texp, gain, Nframes, file_name):
+def main(lambda_vector, texp, gain, fps, Nframes, file_name):
     #creating devices
     slm = deformableMirror('localhost', 7000)
     camera = CBlueOneCamera("CBLUE1:MatroxCXP-Dev_0")
@@ -17,7 +17,7 @@ def main(lambda_vector, texp, gain, Nframes, file_name):
     dark_fname = 'dark.fits'
     dark = 0
     
-    spm.acquire_measures(texp, Nframes, gain, dark)
+    spm.acquire_measures(texp, Nframes,fps, gain, dark)
     fname_meas = "D:\\06 SLM\\diffractive_spots_res\\" + file_name
     spm.save_measures(fname_meas)
     
@@ -34,7 +34,7 @@ def main(lambda_vector, texp, gain, Nframes, file_name):
 def show_images(file_name):
     import matplotlib.pyplot as plt
     
-    cube_images, ptv_vector, texp, gain, Nframes, wl = SpotPositionMeasurer.load_measures(file_name)
+    cube_images, ptv_vector, texp, gain, fps, Nframes, wl = SpotPositionMeasurer.load_measures(file_name)
     
     Nima = cube_images.shape[0]
     
@@ -47,5 +47,5 @@ def show_images(file_name):
         plt.title("lambda = %g"%ptv_vector[i])
         plt.figure()
         plt.clf()
-        plt.plot(cube_images[i].sum(axis=0))
+        plt.plot(cube_images[i].sum(axis=0)/cube_images[i].shape[0])
         plt.title("lambda = %g"%ptv_vector[i])

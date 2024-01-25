@@ -157,3 +157,12 @@ def get_zernike_wf(cmask_obj, j, aj = 1):
     Zj = zernike_builder.getZernike(j)
     image_to_display = aj * Zj
     return image_to_display
+
+
+def get_cmd_from_bmp_file(fname, wl = 589e-9):
+    from PIL import Image
+    bmp_image = Image.open(fname)
+    gray_map = np.array(bmp_image, dtype=np.uint8)
+    lamda_map = wl/256 * gray_map
+    cmd_vector = np.reshape(lamda_map, (1920*1152))
+    return cmd_vector

@@ -50,9 +50,10 @@ class SpotPositionMeasurer():
             clean_cube[n] = self._clean_raw_image(raw_image, dark)
         return clean_cube
     
-    def acquire_measures(self, texp, Nframes, gain = 1, dark = None):
+    def acquire_measures(self, texp, Nframes, fps, gain = 1, dark = None):
         if dark is None:
             dark = 0
+        self._fps = fps
         self._texp = texp
         self._Nframes = Nframes #of each applied tilt
         self._gain = gain
@@ -63,6 +64,8 @@ class SpotPositionMeasurer():
         print("texp:%g"%self._cam.get_exposure_time())
         self._cam.set_gain(gain)
         print("gain: %g"%self._cam.get_gain())
+        self._cam.set_fps(fps)
+        print("fps: %g"%self._cam.get_fps())
         
         for idx in range(self._Ntilt):
             cmd = self._tilt_matrix[idx]
@@ -83,6 +86,7 @@ class SpotPositionMeasurer():
         hdr['N_AV_FR'] = self._Nframes
         hdr['G_DB'] = self._gain
         hdr['WL_M'] = self._wl
+        hdr['FPS'] = self._fps
         
         
         fits.writeto(fname, self._cube_ima, hdr, overwrite=True)
@@ -100,7 +104,8 @@ class SpotPositionMeasurer():
         texp = header['T_EX_MS']
         gain = header['G_DB']
         wl = header['WL_M']
-        return cube_images, ptv_vector, texp, gain, Nframes, wl
+        fps = header['FPS']
+        return cube_images, ptv_vector, texp, gain,fps, Nframes, wl
     
 class SpotPositionAnalyser():
     
@@ -108,7 +113,7 @@ class SpotPositionAnalyser():
     
     def __init__(self, file_name):
         self._cube_images,  self._lambda_vector,\
-         self._texp, self._gain,\
+         self._texp, self._gain, self._fps,\
           self._Nframes,self._wl = SpotPositionMeasurer.load_measures(self.FDIR + file_name)
         
     def get_cube_images(self):
