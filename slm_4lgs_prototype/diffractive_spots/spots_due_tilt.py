@@ -60,12 +60,12 @@ class SpotPositionMeasurer():
         self._cube_ima = []
         flat_cmd = np.zeros(self._Nact)
         
+        self._cam.set_fps(fps)
+        print("fps: %g"%self._cam.get_fps())
         self._cam.set_exposure_time(texp)
         print("texp:%g"%self._cam.get_exposure_time())
         self._cam.set_gain(gain)
         print("gain: %g"%self._cam.get_gain())
-        self._cam.set_fps(fps)
-        print("fps: %g"%self._cam.get_fps())
         
         for idx in range(self._Ntilt):
             cmd = self._tilt_matrix[idx]
@@ -111,11 +111,16 @@ class SpotPositionAnalyser():
     
     FDIR = "D:\\06 SLM\\diffractive_spots_res\\"
     
-    def __init__(self, file_name):
+    def __init__(self, file_name_data, dark = None):
         self._cube_images,  self._lambda_vector,\
          self._texp, self._gain, self._fps,\
-          self._Nframes,self._wl = SpotPositionMeasurer.load_measures(self.FDIR + file_name)
-        
+          self._Nframes, self._wl = SpotPositionMeasurer.load_measures(self.FDIR + file_name_data)
+        if dark is None:
+            self._dark = 0
+        else:
+            self._dark = dark
+            self._reduce_raw_cube()
+            
     def get_cube_images(self):
         return self._cube_images
     
@@ -129,8 +134,47 @@ class SpotPositionAnalyser():
         return self._gain
         
         
+    def _reduce_raw_cube(self):
+        N_of_tilts = len(self._lambda_vector)
+        
+        for idx in range(N_of_tilts):
+            self._cube_images[idx] -= self._dark
+    
+    
+    def show_image(self, ptv_in_lambda):
+        import matplotlib.pyplot as plt
+        
+        idx = np.where(self._lambda_vector == ptv_in_lambda)[0][0]
+        
+        ptv = self._lambda_vector[idx]
+        image = self._cube_images[idx]
+        
+        plt.subplots(2,1, sharex=True, sharey=True)
+        plt.subplot(2,1,1)
+        plt.title(r"$%g \lambda$"%ptv)
+        plt.imshow(np.log(image), cmap='jet')
+        plt.colorbar()
+        plt.subplot(2,1,2)
+        plt.imshow(image, cmap='jet')
+        plt.colorbar()
+        
+    def show_profile(self, ptv_in_lambda):
+        import matplotlib.pyplot as plt
+        idx = np.where(self._lambda_vector == ptv_in_lambda)[0][0]
+        ptv = self._lambda_vector[idx]
+        image = self._cube_images[idx]
         
         
+        #xc = np.where(image.mean(axis = 0) == (image.mean(axis = 0)).max())[0][0]
+        Iprofile = image.sum(axis = 0)
+        
+        plt.figure()
+        plt.clf()
+        plt.title(r"$%g \lambda$"%ptv)
+        plt.plot(np.log(Iprofile))
         
         
+    def get_tilted_position(self, ptv, f, D = 1100*9.2e-6 ):    
+        return ptv*f/D
+
         

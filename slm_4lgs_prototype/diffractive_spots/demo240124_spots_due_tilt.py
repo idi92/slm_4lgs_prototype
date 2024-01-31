@@ -47,7 +47,7 @@ def show_images(file_name):
         plt.title("lambda = %g"%ptv_vector[i])
         plt.figure()
         plt.clf()
-        plt.plot(cube_images[i].sum(axis=0)/cube_images[i].shape[0])
+        plt.plot(np.log(cube_images[i].sum(axis=0)/cube_images[i].shape[0]))
         plt.title("lambda = %g"%ptv_vector[i])
         
 
