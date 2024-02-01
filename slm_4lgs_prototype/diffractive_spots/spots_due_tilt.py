@@ -2,6 +2,9 @@ import numpy as np
 from PIL import Image
 from time import sleep
 from astropy.io import fits
+from scipy.signal import find_peaks
+from slm_4lgs_prototype.utils import whittaker_smooth
+
 
 
 class SpotPositionMeasurer():
@@ -110,6 +113,7 @@ class SpotPositionMeasurer():
 class SpotPositionAnalyser():
     
     FDIR = "D:\\06 SLM\\diffractive_spots_res\\"
+    #FDIR = "C:\\Users\\labot\\Desktop\\misure_tesi_slm\\misure_temp\\"
     
     def __init__(self, file_name_data, dark = None):
         self._cube_images,  self._lambda_vector,\
@@ -120,6 +124,7 @@ class SpotPositionAnalyser():
         else:
             self._dark = dark
             self._reduce_raw_cube()
+        self._detect_spots()
             
     def get_cube_images(self):
         return self._cube_images
@@ -135,9 +140,9 @@ class SpotPositionAnalyser():
         
         
     def _reduce_raw_cube(self):
-        N_of_tilts = len(self._lambda_vector)
+        self._N_of_tilts = len(self._lambda_vector)
         
-        for idx in range(N_of_tilts):
+        for idx in range(self._N_of_tilts):
             self._cube_images[idx] -= self._dark
     
     
@@ -173,6 +178,74 @@ class SpotPositionAnalyser():
         plt.title(r"$%g \lambda$"%ptv)
         plt.plot(np.log(Iprofile))
         
+        plt.figure()
+        plt.clf()
+        plt.title(r"$%g \lambda$"%ptv)
+        plt.plot(Iprofile)
+        
+    def _show_detected_orders(self, Iprofile, height = None, threshold = 0, distance = 80):
+        import matplotlib.pyplot as plt
+        #from slm_4lgs_prototype.utils import whittaker_smooth
+        
+        #Isoothed =  whittaker_smooth.whittaker_smooth(Iprofile, 10, 2)
+        
+        peaks_idx, dct_peaks = find_peaks(Iprofile, height, threshold, distance)
+        Ipeaks = Iprofile[peaks_idx]
+        
+        plt.subplots(2,1,sharex=True)
+        plt.subplot(2,1,1)
+        #plt.title("h = %g"%height+" thsld = %g"%threshold+"dist = %g"%distance)
+        plt.plot(np.log(Iprofile),'k-', label='Sum I')
+        plt.plot(peaks_idx, np.log(Ipeaks),'ro', label = 'peaks/orders')
+        plt.legend(loc='best')
+        plt.subplot(2,1,2)
+        plt.plot(Iprofile,'k-')
+        plt.plot(peaks_idx, Ipeaks,'ro')
+    
+    def _detect_spots(self, height = None, threshold = 0, distance = 80):
+        #TODO: Find a proper way to detect the spots 
+        #height = None
+        #threshold = 0
+        #distance = 80 # FWHM in pixels
+        self._Ispot_list = []
+        self._spot_position_list = []
+        
+        for k in range(self._N_of_tilts):
+            Iprofile = self._cube_images[k].mean(axis=0)
+            Iprofile = whittaker_smooth.whittaker_smooth(Iprofile, 10, 2)
+            peaks_idx, dct_peaks = find_peaks(Iprofile, height, threshold, distance)
+            Ipeaks = Iprofile[peaks_idx]
+            self._Ispot_list.append(Ipeaks)
+            self._spot_position_list.append(peaks_idx)
+    
+    def show_detected_spots_vs_tilt(self):
+        import matplotlib.pyplot as plt
+        
+        x0 = self._get_specular_refection_position()
+        Imax, Imin = self._get_Intensity_min_max_when_flat()
+        
+        plt.figure()
+        plt.clf()
+        
+        for idx in range(self._N_of_tilts):
+            spot_pos = self._spot_position_list[idx] - x0
+            ptv = self._lambda_vector[idx]
+            Ispot = (self._Ispot_list[idx] -Imin)/(Imax - Imin)
+            
+            plt.scatter(ptv*np.ones(len(spot_pos)), spot_pos, c=np.log(Ispot), cmap='jet')
+        
+        plt.colorbar(label="Normalised Intensity", orientation="vertical") 
+    
+    def _get_specular_refection_position(self):
+        idx = np.where(self._lambda_vector == 0)[0][0]
+        origin = np.where(self._Ispot_list[idx] == self._Ispot_list[idx].max())
+        return self._spot_position_list[idx][origin][0] 
+    
+    def _get_Intensity_min_max_when_flat(self):
+        idx = np.where(self._lambda_vector == 0)[0][0]
+        Imax = self._Ispot_list[idx].max()
+        Imin = self._Ispot_list[idx].min()
+        return Imax, Imin
         
     def get_tilted_position(self, ptv, f, D = 1100*9.2e-6 ):    
         return ptv*f/D
